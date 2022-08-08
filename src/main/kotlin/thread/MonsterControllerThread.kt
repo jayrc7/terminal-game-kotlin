@@ -1,11 +1,11 @@
 package thread
 
-import model.Gameboard
+import GameStateMachine
+import Gameboard
 import model.Monster
-import java.util.concurrent.locks.ReentrantLock
 import kotlin.random.Random
 
-class MonsterControllerThread constructor(var gameboard : Gameboard, level : Int, val sharedMovementLock : ReentrantLock) : Thread() {
+class MonsterControllerThread constructor(var gameboard : Gameboard, level : Int, val gameStateMachine : GameStateMachine) : Thread() {
     var startedWork = false;
     val totalMonsters = level * 2;
     val monsters = List<Monster>(totalMonsters){ i -> Monster() };
@@ -20,9 +20,6 @@ class MonsterControllerThread constructor(var gameboard : Gameboard, level : Int
         // move monsters until thread is interrupted
         // thead will be interrupted when the player reaches a new room or the game ends
         while(!isInterrupted) {
-            sharedMovementLock.lock();
-
-            sharedMovementLock.unlock();
         }
     }
     fun generateMonsterPositions() {

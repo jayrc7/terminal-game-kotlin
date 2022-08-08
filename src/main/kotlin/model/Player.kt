@@ -12,4 +12,26 @@ class Player {
     fun getYCoordinate() : Int {
         return playerYCoordinate;
     }
+
+    fun moveUp() {
+        playerYCoordinate--;
+    }
+
+    fun moveDown() {
+        playerYCoordinate++;
+    }
+
+    fun moveLeft() {
+        playerXCoordinate--;
+    }
+
+    fun moveRight() {
+        playerXCoordinate++;
+    }
+
+
+    fun resetLocation() {
+        playerXCoordinate = 0;
+        playerYCoordinate = 0;
+    }
 }

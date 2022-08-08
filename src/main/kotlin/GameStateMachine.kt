@@ -1,11 +1,10 @@
 import model.Obstacle
-import model.Gameboard
 import model.Monster
+import model.Player
 import thread.MonsterControllerThread
 import java.util.*
-import java.util.concurrent.locks.ReentrantLock
 
-class GameStateMachine constructor (private var gameBoard : Gameboard) {
+class GameStateMachine constructor (private var gameBoard : Gameboard, private var player : Player) {
     // spawns obstacles on gameboard
     //var obstacleSpawner = ObstacleSpawner(gameBoard);
 
@@ -13,11 +12,12 @@ class GameStateMachine constructor (private var gameBoard : Gameboard) {
     var level = 1;
 
     // spawns and controls monsters on gameboard
-    var monsterSpawner = MonsterControllerThread(gameBoard, level);
+    var monsterSpawner = MonsterControllerThread(gameBoard, level, this);
 
     var monsters : List<Monster> = listOf();
 
     var obstacles : List<Obstacle> = listOf();
+
 
     // defining states
     val NEW_GAME = "NEW_GAME";
@@ -26,12 +26,17 @@ class GameStateMachine constructor (private var gameBoard : Gameboard) {
     val MOVE_USER = "MOVE_USER";
     // var MOVE_MONSTERS = "MOVE_MONSTERS; not supported yet
     val GAME_OVER = "GAME_OVER";
+    val CHECK_GAME_OVER = "CHECK_GAME_OVER";
 
     // for player movement directions
     val UP = 'w';
     val DOWN = 's';
     val LEFT = 'a';
     val RIGHT = 'd';
+
+    // exit room variables
+    val EXIT_ROOM_X = gameBoard.getTotalCols() - 1;
+    val EXIT_ROOM_Y = gameBoard.getTotalRows() - 1;
 
     init {
         // keeps track of current state
@@ -66,16 +71,13 @@ class GameStateMachine constructor (private var gameBoard : Gameboard) {
                 gameBoard.claimNextTurn();
                 newState = moveUser(userInput)
             };
+            CHECK_GAME_OVER -> newState = checkGameOver();
             else -> { newState = GAME_OVER }
         }
 
-        // only release lock if it is locked
-        // TODO issue here is that this may release lock from monster thread control, need to denote whether
-        // TODO this thread specifically is holding the lock
-        /*
-        if (.isLocked)
-            sharedMovementLock.unlock();
-         */
+        // only release lock if state machine has current turn and not monster controller thread
+        if (gameBoard.doesPlayerHaveCurrentTurn())
+            gameBoard.completedCurrentTurn();
 
         return newState;
     }
@@ -104,10 +106,10 @@ class GameStateMachine constructor (private var gameBoard : Gameboard) {
      * Transitions to: WAITING
      */
     fun newRoom() : String {
-        sharedMovementLock.lock();
+        gameBoard.claimNextTurn();
+
         // reset player location
-        playerX = 0;
-        playerY = 0;
+        gameBoard.resetPlayerLocation();
 
         // delete current monster thread if initialized
 
@@ -124,10 +126,12 @@ class GameStateMachine constructor (private var gameBoard : Gameboard) {
          */
 
         // setup gameboard
+        gameBoard.setupRoom(player);
 
         // print status of current room
+        println("Current level: ${level}\n");
         gameBoard.printRoom();
-        sharedMovementLock.lock();
+        gameBoard.completedCurrentTurn();
         return WAITING;
     }
 
@@ -136,10 +140,9 @@ class GameStateMachine constructor (private var gameBoard : Gameboard) {
      * Transitions to: WAITING, MOVE_USER
      */
     fun waiting() : String {
-
         val scanner = Scanner(System.`in`);
         val input = scanner.next()[0];
-        if (input != 'a' && input != 'w' && input != 's' && input != 'd') {
+        if (input != LEFT && input != UP && input != DOWN && input != RIGHT) {
             return WAITING;
         }
 
@@ -147,51 +150,24 @@ class GameStateMachine constructor (private var gameBoard : Gameboard) {
     }
 
     /**
-     * Moves user in gameboard
+     * Moves user in gameboard by calling move method inside gameboard
      * Transitions to: WAITING, MOVE_MONSTER (not supported), NEW_ROOM, GAME_OVER
      */
     private fun moveUser(direction: Char) : String {
-        // move user based on direction
-        when (direction) {
-            UP -> {
-                if (playerY != 0) {
-                    gameBoard[playerY][playerX] = '_';
-                    gameBoard[--playerY][playerX] = '$';
-                }
+        // move user according to direction specified
+        gameBoard.moveUser(direction);
 
-            }
+        // print status of current room after move was made
+        gameBoard.printRoom();
 
-            DOWN -> {
-                if (playerY != ROWS-1) {
-                    gameBoard[playerY][playerX] = '_';
-                    gameBoard[++playerY][playerX] = '$';
-                }
-            }
 
-            LEFT -> {
-                if (playerX != 0) {
-                    gameBoard[playerY][playerX] = '_';
-                    gameBoard[playerY][--playerX] = '$';
-                };
-            }
+        return CHECK_GAME_OVER;
+    }
 
-            RIGHT -> {
-                if (playerX != COLS-1) {
-                    gameBoard[playerY][playerX] = '_';
-                    gameBoard[playerY][++playerX] = '$';
-                };
-            }
-
-            else -> {
-                // do nothing
-            }
-        }
-
-        // print status of current room
-        printRoom();
-
+    // TODO add logic for checking if monster won
+    fun checkGameOver() : String {
         // check if user has reached objective
-        if (playerX == EXIT_ROOM_X && playerY == EXIT_ROOM_Y) {
+        if (gameBoard.getPlayerXCoordinate() == EXIT_ROOM_X && gameBoard.getPlayerYCoordinate() == EXIT_ROOM_Y) {
             // check if user won the game
             if (level == 3) {
                 return GAME_OVER;
@@ -206,5 +182,13 @@ class GameStateMachine constructor (private var gameBoard : Gameboard) {
         }
 
         return WAITING;
+    }
+
+    /**
+     * MonsterControllerThread will attempt to call this method multiple times
+     */
+    fun moveMonsters() {
+        gameBoard.claimNextTurn();
+        gameBoard.completedCurrentTurn();
     }
 }

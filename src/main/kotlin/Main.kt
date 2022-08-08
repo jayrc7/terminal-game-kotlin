@@ -1,10 +1,12 @@
-import model.Gameboard
-import java.util.concurrent.locks.ReentrantLock
+import model.Player
 
 fun main(args: Array<String>) {
+    // initialize player
+    val player =  Player()
+
     // initialize gameboard
-    var gameboard = Gameboard();
+    val gameboard = Gameboard(player);
 
     // initialize game state machine
-    var machine = GameStateMachine(gameboard);
+    val machine = GameStateMachine(gameboard, player);
 }
