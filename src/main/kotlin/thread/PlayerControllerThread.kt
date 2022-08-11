@@ -15,6 +15,8 @@ class PlayerControllerThread constructor (val gameboard: Gameboard): Thread() {
             println("enter next move: ");
             val scanner = Scanner(System.`in`);
             val input = scanner.next()[0];
+
+            // move user if appropriate key (wasd) is entered
             if (input == LEFT || input == UP || input == DOWN || input == RIGHT) {
                 gameboard.claimNextTurn(); // obtain turn lock
                 gameboard.moveUser(input); // move user

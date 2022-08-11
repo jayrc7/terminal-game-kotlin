@@ -3,25 +3,23 @@ import java.util.concurrent.locks.ReentrantLock
 
 class Gameboard constructor(private val ROWS: Int = 3, private val COLS: Int = 4) {
 
+    // player and monster controller threads will need to grab lock before executing their turn
     private var claimTurnLock : ReentrantLock = ReentrantLock();
 
-    private var gameBoard : Array<CharArray> = Array<CharArray> (ROWS) { i -> CharArray(COLS) }
+    // 2D matrix that contains represents gameboard
+    private var gameboard : Array<CharArray> = Array<CharArray> (ROWS) { i -> CharArray(COLS) }
 
     // for player movement directions
-    val UP = 'w';
-    val DOWN = 's';
-    val LEFT = 'a';
-    val RIGHT = 'd';
+    val UP = 'w'; val DOWN = 's'; val LEFT = 'a'; val RIGHT = 'd';
 
     // contains player's current level
     var level = 1;
 
     // exit room variables
-    val EXIT_ROOM_X = COLS - 1;
-    val EXIT_ROOM_Y = ROWS - 1;
+    val EXIT_ROOM_X = COLS - 1; val EXIT_ROOM_Y = ROWS - 1;
 
-    var playerX = 0;
-    var playerY = 0;
+    // keeps track of player location in board
+    var playerX = 0; var playerY = 0;
 
     fun checkGameOver() {
         // check if user has reached objective
@@ -45,7 +43,8 @@ class Gameboard constructor(private val ROWS: Int = 3, private val COLS: Int = 4
         claimNextTurn();
 
         // reset player location
-        resetPlayerLocation();
+        playerX = 0;
+        playerY = 0;
 
         // delete current monster thread if initialized
 
@@ -76,7 +75,7 @@ class Gameboard constructor(private val ROWS: Int = 3, private val COLS: Int = 4
         for (i in 0..ROWS-1) {
             // iterate over board cols
             for (j in 0..COLS-1) {
-                print(gameBoard[i][j]);
+                print(gameboard[i][j]);
             }
 
             // print an empty line for padding
@@ -87,15 +86,15 @@ class Gameboard constructor(private val ROWS: Int = 3, private val COLS: Int = 4
     fun setupRoom() {
         for (i in 0..ROWS-1) {
             // iterate over board cols
-            for (j in 0..gameBoard[0].size - 1) {
+            for (j in 0..gameboard[0].size - 1) {
                 // TODO add logic for monsters
                 // render player if current position in board is player position, otherwise render free space
                 if (i == playerX && j == playerY)
-                    gameBoard[i][j] = '$';
+                    gameboard[i][j] = '$';
                 else if (i == ROWS-1 && j == COLS-1)
-                    gameBoard[i][j] = '0';
+                    gameboard[i][j] = '0';
                 else
-                    gameBoard[i][j] = '_';
+                    gameboard[i][j] = '_';
             }
         }
     }
@@ -113,30 +112,30 @@ class Gameboard constructor(private val ROWS: Int = 3, private val COLS: Int = 4
         when (direction) {
             UP -> {
                 if (playerY != 0) {
-                    gameBoard[playerY][playerX] = '_';
-                    gameBoard[--playerY][playerX] = '$';
+                    gameboard[playerY][playerX] = '_';
+                    gameboard[--playerY][playerX] = '$';
                 }
 
             }
 
             DOWN -> {
                 if (playerY != ROWS - 1) {
-                    gameBoard[playerY][playerX] = '_';
-                    gameBoard[++playerY][playerX] = '$';
+                    gameboard[playerY][playerX] = '_';
+                    gameboard[++playerY][playerX] = '$';
                 }
             }
 
             LEFT -> {
                 if (playerX != 0) {
-                    gameBoard[playerY][playerX] = '_';
-                    gameBoard[playerY][--playerX] = '$';
+                    gameboard[playerY][playerX] = '_';
+                    gameboard[playerY][--playerX] = '$';
                 };
             }
 
             RIGHT -> {
                 if (playerX != COLS - 1) {
-                    gameBoard[playerY][playerX] = '_';
-                    gameBoard[playerY][++playerX] = '$';
+                    gameboard[playerY][playerX] = '_';
+                    gameboard[playerY][++playerX] = '$';
                 };
             }
 
@@ -144,11 +143,6 @@ class Gameboard constructor(private val ROWS: Int = 3, private val COLS: Int = 4
                 // do nothing
             }
         }
-    }
-
-    fun resetPlayerLocation() {
-        playerX = 0;
-        playerY = 0;
     }
 
     /**
