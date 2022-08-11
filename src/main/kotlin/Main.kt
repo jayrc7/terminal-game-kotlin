@@ -1,12 +1,20 @@
-import model.Player
+import thread.PlayerControllerThread
 
 fun main(args: Array<String>) {
-    // initialize player
-    val player =  Player()
+    // print welcome text
+    println("Welcome to the game. Objective is to reach the end of the third room, while defeating the monsters \n" +
+            "that stand in your way!");
+
+    // wait until user presses enter key to start the game
+    do {
+        println("Press enter to play!");
+    } while (readLine() != "");
 
     // initialize gameboard
-    val gameboard = Gameboard(player);
+    val gameboard = Gameboard();
+    gameboard.newRoom();
 
-    // initialize game state machine
-    val machine = GameStateMachine(gameboard, player);
+    // initialize new thread for taking user inputs
+    var playerController = PlayerControllerThread(gameboard);
+    playerController.start();
 }

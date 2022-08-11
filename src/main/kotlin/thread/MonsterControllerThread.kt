@@ -1,27 +1,27 @@
 package thread
 
-import GameStateMachine
 import Gameboard
 import model.Monster
 import kotlin.random.Random
 
-class MonsterControllerThread constructor(var gameboard : Gameboard, level : Int, val gameStateMachine : GameStateMachine) : Thread() {
+class MonsterControllerThread constructor(var gameboard : Gameboard, level : Int) : Thread() {
+
     var startedWork = false;
     val totalMonsters = level * 2;
     val monsters = List<Monster>(totalMonsters){ i -> Monster() };
 
-    override  fun run() {
+    override fun run() {
         startedWork = true;
 
         // generate monsters on board
         generateMonsterPositions();
-
 
         // move monsters until thread is interrupted
         // thead will be interrupted when the player reaches a new room or the game ends
         while(!isInterrupted) {
         }
     }
+
     fun generateMonsterPositions() {
         // update location of each monster
         var currentMonster : Monster;
